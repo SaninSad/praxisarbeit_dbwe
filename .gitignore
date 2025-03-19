@@ -1,0 +1,9 @@
+**/__pycache__
+app.db
+logs
+.env
+venv
+certs/
+*.pem
+*.crt
+*.key
