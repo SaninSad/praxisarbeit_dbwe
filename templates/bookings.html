@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Buchungen{% endblock %}
+
+{% block content %}
+    <h1>Willkommen, {{ current_user.username }}!</h1>
+    <p>Hier können Sie ein Auto reservieren oder Ihre aktuellen Buchungen einsehen.</p>
+
+    <!-- Flash-Meldungen -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <h2>Verfügbare Autos</h2>
+    <form method="post">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            <label for="car_id">Auto auswählen:</label>
+            <select name="car_id" class="form-input">
+                {% for car in available_cars %}
+                    <option value="{{ car.id }}">{{ car.brand }} {{ car.model }} - {{ car.license_plate }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="start_date">Startdatum:</label>
+            <input type="datetime-local" name="start_date" class="form-input" required>
+        </div>
+
+        <div class="form-group">
+            <label for="end_date">Enddatum:</label>
+            <input type="datetime-local" name="end_date" class="form-input" required>
+        </div>
+
+        <button type="submit" class="btn">Auto buchen</button>
+    </form>
+
+    <h2>Ihre Buchungen</h2>
+    <ul>
+        {% for booking in user_bookings %}
+            <li>
+                <strong>{{ booking.car.brand }} {{ booking.car.model }} - {{ booking.car.license_plate }}</strong><br>
+                <strong>Von:</strong> {{ booking.start_date.strftime('%d.%m.%Y %H:%M') }}<br>
+                <strong>Bis:</strong> {{ booking.end_date.strftime('%d.%m.%Y %H:%M') }}
+                <form action="{{ url_for('cancel_booking', booking_id=booking.id) }}" method="post">
+                    {{ form.hidden_tag() }}
+                    <button type="submit" class="btn btn-danger">Stornieren</button>
+                </form>
+            </li>
+        {% else %}
+            <p>Sie haben noch keine Buchungen.</p>
+        {% endfor %}
+    </ul>
+{% endblock %}

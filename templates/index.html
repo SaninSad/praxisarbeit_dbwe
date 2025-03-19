@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Willkommen zum Auto Buchungssystem</h1>
+    <p>Hier können Sie verfügbare Fahrzeuge buchen und Ihre Reservierungen verwalten.</p>
+
+    <!-- Button zur Buchungsseite -->
+    <a href="{{ url_for('bookings') }}" class="btn btn-primary">Jetzt ein Auto buchen</a>
+</div>
+{% endblock %}
