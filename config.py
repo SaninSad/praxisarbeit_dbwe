@@ -1,7 +1,10 @@
+# Import der notwendigen Modul
 from dotenv import load_dotenv
 import os
 
+# Laden der Umgebungsvariablen aus der .env-Datei
 load_dotenv()
+# Basisverzeichnis der Anwendung bestimmen
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env'))
 
