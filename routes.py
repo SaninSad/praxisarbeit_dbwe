@@ -1,3 +1,4 @@
+# Import relevanter Module
 from flask import render_template, redirect, url_for, flash, request, jsonify, Blueprint
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
@@ -8,14 +9,14 @@ from models import User, Car, Booking
 from forms import LoginForm, RegistrationForm, BookingForm, CarForm
 from datetime import datetime, timedelta
 
-
+# Startseite (geschützt durch Login)
 @app.route('/')
 @app.route('/index')
 @login_required
 def index():
     return render_template('index.html', title='Home')
 
-
+# Login-Funktion
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -31,35 +32,37 @@ def login():
         password = data.get("password")
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(password):
-            access_token = create_access_token(identity=user.id)
-            return jsonify(access_token=access_token)
+            access_token = create_access_token(identity=user.id) # Erstelle ein JWT-Token
+            return jsonify(access_token=access_token) # Sende das Token zurück
         return jsonify({"msg": "Invalid credentials"}), 401
 
     # Wenn Formulardaten gesendet werden (Web-Login)
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and user.check_password(form.password.data):
-            login_user(user)
+            login_user(user) # Nutzer einloggen
             flash("Login erfolgreich!", "success")
             return redirect(url_for("index"))
 
     flash("Ungültige Anmeldedaten!", "danger")
     return redirect(url_for("login"))
 
+# Logout-Funktion
 @app.route('/logout', methods=['POST'])
-@login_required  # Für Session-User
+@login_required  # Nur für eingeloggte Benutzer
 @jwt_required(optional=True)  # Falls jemand mit JWT kommt
 def logout():
     if get_jwt_identity():
-        return jsonify({"msg": "Logged out successfully"}), 200
+        return jsonify({"msg": "Logged out successfully"}), 200 # API-Logout
     logout_user()
     flash('Du wurdest erfolgreich ausgeloggt.', 'success')
     return redirect(url_for('index'))
 
+# Registrierung eines neuen Benutzers
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('index'))
+        return redirect(url_for('index')) # Falls bereits eingeloggt, weiterleiten
     form = RegistrationForm()
     if form.validate_on_submit():
         existing_user = User.query.filter_by(username=form.username.data).first()
@@ -69,20 +72,22 @@ def register():
         user = User(
             username=form.username.data,
             email=form.email.data,
-            password_hash=generate_password_hash(form.password.data)
+            password_hash=generate_password_hash(form.password.data) # Passwort verschlüsseln
         )
-        db.session.add(user)
+        db.session.add(user) # Neuen Benutzer in die Datenbank speichern
         db.session.commit()
         flash('Registrierung erfolgreich! Sie können sich jetzt anmelden.', 'success')
         return redirect(url_for('login'))
     return render_template('register.html', title='Registrierung', form=form)
 
+
+# Buchungsseite (Benutzer kann ein Auto buchen)
 @app.route('/bookings', methods=['GET', 'POST'])
 @login_required
 def bookings():
     form = BookingForm()
-    available_cars = Car.query.filter_by(available=True).all()
-    user_bookings = Booking.query.filter_by(user_id=current_user.id).all()
+    available_cars = Car.query.filter_by(available=True).all() # Alle verfügbaren Autos abrufen
+    user_bookings = Booking.query.filter_by(user_id=current_user.id).all() # Buchungen des Benutzers abrufen
 
     # Setze die Optionen für das Dropdown-Feld
     form.car_id.choices = [(car.id, f"{car.brand} {car.model} - {car.license_plate}") for car in available_cars]
@@ -123,12 +128,12 @@ def bookings():
 
     return render_template('bookings.html', form=form, available_cars=available_cars, user_bookings=user_bookings)
 
-
+# Auto hinzufügen (Admin-Funktion)
 @app.route('/add_car', methods=['GET', 'POST'])
 @login_required
 def add_car():
     if not current_user.is_authenticated:
-        return redirect(url_for('login'))
+        return redirect(url_for('login')) # Falls nicht eingeloggt, weiterleiten
 
     form = CarForm()
     if form.validate_on_submit():
@@ -145,6 +150,7 @@ def add_car():
     
     return render_template('add_car.html', form=form)
 
+# API-Endpoint zur Verfügbarkeitsprüfung eines Autos
 @app.route('/check_availability', methods=['POST'])
 @login_required
 def check_availability():
@@ -164,6 +170,7 @@ def check_availability():
     
     return jsonify({"available": True, "message": "Dieses Auto ist verfügbar!"})
 
+# Stornieren einer Buchung
 @app.route('/cancel_booking/<int:booking_id>', methods=['POST'])
 @login_required
 def cancel_booking(booking_id):
